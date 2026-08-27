@@ -2,11 +2,66 @@
 - name: Update and upgrade packages on Debian-based systems
   hosts: all
   become: true
+  gather_facts: true
+
+  vars:
+    debug_level: moderate
+
   tasks:
+    - name: Display target host information
+      ansible.builtin.debug:
+        msg:
+          - "Target host: {{ inventory_hostname }}"
+          - "OS family: {{ ansible_os_family }}"
+          - "Release: {{ ansible_distribution_version | default('N/A') }}"
+
     - name: Update apt package index
       ansible.builtin.apt:
         update_cache: yes
+      register: apt_update_result
+      ignore_errors: yes
+
+    - name: Show apt update status
+      ansible.builtin.debug:
+        msg:
+          - "Status: {{ 'SUCCESS' if apt_update_result.rc == 0 else 'FAILED' }}"
+          - "Return code: {{ apt_update_result.rc | default('N/A') }}"
+          - "Stdout: {{ apt_update_result.stdout_lines | default([]) | truncate(50, True) }}"
+      when: apt_update_result.changed or not apt_update_result.failed
+
+    - name: Show apt update failure info
+      ansible.builtin.debug:
+        msg:
+          - "ERROR during apt update"
+          - "{{ apt_update_result.stderr_lines | default([]) | truncate(50, True) }}"
+      when: apt_update_result.failed
 
     - name: Perform a dist-upgrade
       ansible.builtin.apt:
         upgrade: dist
+      register: apt_upgrade_result
+      ignore_errors: yes
+
+    - name: Show apt upgrade status
+      ansible.builtin.debug:
+        msg:
+          - "Status: {{ 'SUCCESS' if apt_upgrade_result.rc == 0 else 'FAILED' }}"
+          - "Changed packages: {{ apt_upgrade_result.changes | default(0) }}"
+          - "Return code: {{ apt_upgrade_result.rc | default('N/A') }}"
+      when: apt_upgrade_result.changed or not apt_upgrade_result.failed
+
+    - name: Show apt upgrade failure info
+      ansible.builtin.debug:
+        msg:
+          - "ERROR during apt upgrade"
+          - "Details: {{ apt_upgrade_result.msg | default('Unknown') }}"
+      when: apt_upgrade_result.failed
+
+    - name: Show final summary
+      ansible.builtin.debug:
+        msg:
+          - "=== PLAY SUMMARY ==="
+          - "Host: {{ inventory_hostname }}"
+          - "Update cache: {{ 'CHANGED' if apt_update_result.changed else 'NO CHANGES' }}"
+          - "Upgrade performed: {{ 'YES' if apt_upgrade_result.changed else 'NO' }}"
+          - "Any failures: {{ 'YES' if (apt_update_result.failed or apt_upgrade_result.failed) else 'NO' }}"
