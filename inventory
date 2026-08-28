@@ -4,4 +4,9 @@
 192.168.68.47 ansible_python_interpreter=/usr/bin/python3.14  
 192.168.68.48 ansible_python_interpreter=/usr/bin/python3.14  
 192.168.68.220 ansible_python_interpreter=/usr/bin/python3.14  
+192.168.68.42 ansible_python_interpreter=/usr/bin/python3.14
+192.168.68.118 ansible_python_interpreter=/usr/bin/python3.14
 192.168.68.77 ansible_python_interpreter=/usr/bin/python3.14
+192.168.68.116 ansible_python_interpreter=/usr/bin/python3.14
+192.168.68.110 ansible_python_interpreter=/usr/bin/python3.14
+192.168.68.233 ansible_python_interpreter=/usr/bin/python3.14
