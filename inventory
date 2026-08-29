@@ -1,9 +1,17 @@
-192.168.68.145 ansible_python_interpreter=/usr/bin/python3.14 
-192.168.68.72 ansible_python_interpreter=/usr/bin/python3.14  
-192.168.68.228 ansible_python_interpreter=/usr/bin/python3.14  
-192.168.68.47 ansible_python_interpreter=/usr/bin/python3.14  
-192.168.68.48 ansible_python_interpreter=/usr/bin/python3.14  
-192.168.68.233 ansible_python_interpreter=/usr/bin/python3.14
-192.168.68.220 ansible_python_interpreter=/usr/bin/python3.14  
-192.168.68.77 ansible_python_interpreter=/usr/bin/python3.14
-192.168.68.233 ansible_python_interpreter=/usr/bin/python3.14
+192.168.68.42
+192.168.68.116
+192.168.68.118
+192.168.68.110
+192.168.68.145 
+192.168.68.72
+192.168.68.228
+192.168.68.47
+192.168.68.48
+192.168.68.233
+192.168.68.220
+192.168.68.77
+192.168.68.233
+
+[all_nodes:vars]
+ansible_python_interpreter=auto_silent
+
