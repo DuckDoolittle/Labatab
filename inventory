@@ -13,10 +13,3 @@
 192.168.68.116 ansible_python_interpreter=/usr/bin/python3.14
 192.168.68.110 ansible_python_interpreter=/usr/bin/python3.14
 192.168.68.233 ansible_python_interpreter=/usr/bin/python3.14
-
-
-# Hosts that FAILED (explicitly set user=root and disable become)
-#192.168.68.118 ansible_user=root ansible_become=false
-#192.168.68.42  ansible_user=root ansible_become=false
-#192.168.68.110 ansible_user=root ansible_become=false
-#192.168.68.116 ansible_user=root ansible_become=false
