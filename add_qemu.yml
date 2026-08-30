@@ -1,0 +1,35 @@
+---
+- name: Install and enable QEMU Guest Agent
+  hosts: all
+  become: yes
+  vars:
+    # List of IPs to skip
+    excluded_ips:
+      - "192.168.68.42"
+      - "192.168.68.233"
+      - "192.168.68.118"
+
+  tasks:
+    - name: Execute installation only for non-excluded IPs
+      block:
+        - name: Install qemu-guest-agent (Debian/Ubuntu)
+          apt:
+            name: qemu-guest-agent
+            state: present
+            update_cache: yes
+          when: ansible_os_family == "Debian"
+
+        - name: Install qemu-guest-agent (RedHat/CentOS/Fedora)
+          dnf:
+            name: qemu-guest-agent
+            state: present
+          when: ansible_os_family == "RedHat"
+
+        - name: Ensure qemu-guest-agent is started and enabled
+          systemd:
+            name: qemu-guest-agent
+            state: started
+            enabled: yes
+
+      # This condition applies to ALL tasks inside the block above
+      when: ansible_default_ipv4.address not in excluded_ips
