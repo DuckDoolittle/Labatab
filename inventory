@@ -10,6 +10,7 @@
 192.168.68.233
 192.168.68.38
 192.168.68.146
+192.168.68.8
 
 [all_nodes:vars]
 ansible_python_interpreter=auto_silent
