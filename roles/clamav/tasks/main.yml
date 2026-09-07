@@ -1,0 +1,31 @@
+- name: Ensure ansible user exists
+  user:
+    name: "{{ ansible_user }}"
+    shell: /bin/bash
+    create_home: true
+  tags: [install, clamav]
+
+- name: Install ClamAV packages
+  apt:
+    name:
+      - clamav
+      - clamav-daemon
+      - cron
+    state: present
+    update_cache: true
+  tags: [install, clamav]
+
+- name: Configure ClamAV freshclam
+  lineinfile:
+    path: /etc/clamav/freshclam.conf
+    regexp: "^#?Example"
+    line: "Example"
+  notify: Restart clamav-daemon
+  tags: [config, clamav]
+
+- name: Update virus database
+  command: freshclam
+  args:
+    creates: /var/lib/clamav/daily.cvd
+  notify: Restart clamav-daemon
+  tags: [update, clamav]

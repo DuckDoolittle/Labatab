@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: ansible
+  description: Install and configure ClamAV
+  company: 
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+  galaxy_tags:
+    - clamav
+    - antivirus
+    - security
+
+dependencies: []

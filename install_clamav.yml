@@ -1,0 +1,69 @@
+---
+- name: Install and configure ClamAV
+  hosts: all
+  become: true
+  vars:
+    ansible_user: ansible
+  tasks:
+    - name: Fix interrupted dpkg state
+      command: dpkg --configure -a
+      ignore_errors: true
+      changed_when: false
+
+    - name: Update apt cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+      ignore_errors: true
+      changed_when: false
+
+    - name: Ensure ansible user exists
+      user:
+        name: "{{ ansible_user }}"
+        shell: /bin/bash
+        create_home: true
+
+    - name: Install ClamAV packages
+      apt:
+        name:
+          - clamav
+          - clamav-daemon
+          - cron
+        state: present
+
+    - name: Ensure /etc/clamav directory exists
+      file:
+        path: /etc/clamav
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Configure ClamAV freshclam
+      lineinfile:
+        path: /etc/clamav/freshclam.conf
+        regexp: "^#?Example"
+        line: "Example"
+      notify: Restart clamav-daemon
+
+    - name: Update virus database
+      command: freshclam
+      args:
+        creates: /var/lib/clamav/daily.cvd
+      ignore_errors: true
+      notify: Restart clamav-daemon
+
+    - name: Schedule daily ClamAV scan at 00:01
+      cron:
+        name: "Daily ClamAV scan"
+        hour: "0"
+        minute: "1"
+        job: "clamscan -r /home/{{ ansible_user }} /var/www 2>/dev/null"
+        state: present
+        user: "{{ ansible_user }}"
+
+  handlers:
+    - name: Restart clamav-daemon
+      service:
+        name: clamav-daemon
+        state: restarted

@@ -1,3 +1,4 @@
+[web_servers]
 192.168.68.42
 192.168.68.116
 192.168.68.72
@@ -7,11 +8,11 @@
 192.168.68.233
 192.168.68.220
 192.168.68.77
-192.168.68.233
 192.168.68.38
 192.168.68.146
 192.168.68.8
 
-[all_nodes:vars]
-ansible_python_interpreter=auto_silent
-
+[all:vars]
+ansible_pipelining=false
+ansible_ssh_extra_args="-o ForwardAgent=yes -o PubkeyAuthentication=yes -o IdentitiesOnly=yes"
+ansible_timeout=30

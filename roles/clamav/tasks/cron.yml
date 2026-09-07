@@ -1,0 +1,5 @@
+- name: Ensure cron is installed
+  package:
+    name: cron
+    state: present
+  tags: [schedule, clamav]
