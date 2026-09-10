@@ -1,0 +1,69 @@
+---
+- name: Deploy ClamAV with Wazuh Integration v2
+  hosts: all
+  become: true
+  vars:
+    ansible_user: ansible
+    clamav_log_path: "/var/log/clamav/clamav.log"
+
+  tasks:
+    - name: Install ClamAV and required tools
+      apt:
+        name: [clamav, clamav-daemon, cron]
+        state: present
+        update_cache: yes
+
+    - name: Ensure ClamAV log directory exists
+      file:
+        path: /var/log/clamav
+        state: directory
+        owner: clamav
+        group: clamav
+        mode: '0755'
+
+    - name: Create ClamAV scan script with logging
+      copy:
+        dest: /usr/local/bin/wazuh_clamscan.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          LOG_FILE="{{ clamav_log_path }}"
+          TIMESTAMP=2026-09-09 23:12:58
+          echo "--- Scan Started  ---" >> 
+          /usr/bin/clamscan -r /home/{{ ansible_user }} /var/www /etc --log=
+          echo "--- Scan Finished ---" >> 
+
+    - name: Schedule daily scan to run at 00:01
+      cron:
+        name: "Daily ClamAV Scan"
+        hour: "0"
+        minute: "1"
+        job: "/usr/local/bin/wazuh_clamscan.sh"
+        user: root
+
+    - name: Check if Wazuh config exists
+      stat:
+        path: /var/ossec/etc/ossec.conf
+      register: wazuh_config
+
+    - name: Configure Wazuh Agent to monitor ClamAV logs
+      blockinfile:
+        path: /var/ossec/etc/ossec.conf
+        marker: "# CLAMAV LOG MONITORING"
+        insertafter: "</localfile>"
+        block: |
+          <localfile>
+            <log_format>syslog</log_format>
+            <location>{{ clamav_log_path }}</location>
+          </localfile>
+      when: wazuh_config.stat.exists
+      notify: Restart wazuh
+
+  handlers:
+    - name: Restart wazuh
+      shell: |
+        if systemctl is-active --quiet wazuh-manager; then
+          systemctl restart wazuh-manager
+        elif systemctl is-active --quiet wazuh-agent; then
+          systemctl restart wazuh-agent
+        fi

@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: ansible
+  description: Configure SMTP outgoing service
+  company: 
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+  galaxy_tags:
+    - smtp
+    - mail
+    - ssmtp
+
+dependencies: []

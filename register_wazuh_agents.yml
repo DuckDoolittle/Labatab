@@ -1,0 +1,50 @@
+---
+- name: Register Unmanaged Servers to Wazuh
+  hosts: all
+  become: true
+  vars:
+    wazuh_manager: "192.168.68.77"
+    ansible_user: ansible
+
+  tasks:
+    - name: Check if Wazuh Agent is installed
+      shell: "dpkg -l | grep wazuh-agent"
+      register: wazuh_installed
+      ignore_errors: true
+      changed_when: false
+
+    - name: Check if Wazuh Agent is running
+      systemd:
+        name: wazuh-agent
+        state: started
+      register: wazuh_running
+      ignore_errors: true
+
+    - name: Install and Register Wazuh Agent
+      block:
+        - name: Install Wazuh Agent package
+          apt:
+            name: wazuh-agent
+            state: present
+            update_cache: yes
+
+        - name: Configure Wazuh Manager IP
+          lineinfile:
+            path: /var/ossec/etc/ossec.conf
+            regexp: '<address>.*</address>'
+            line: "    <address>{{ wazuh_manager }}</address>"
+          notify: Restart wazuh-agent
+
+        - name: Ensure Wazuh Agent is started and enabled
+          systemd:
+            name: wazuh-agent
+            state: started
+            enabled: yes
+
+      when: wazuh_installed.rc != 0 or wazuh_running.failed
+
+  handlers:
+    - name: Restart wazuh-agent
+      systemd:
+        name: wazuh-agent
+        state: restarted

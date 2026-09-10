@@ -1,0 +1,51 @@
+---
+- name: Full Wazuh Agent Deployment and Registration
+  hosts: all
+  become: true
+  vars:
+    wazuh_manager: "192.168.68.77"
+
+  tasks:
+    - name: Install dependencies
+      apt:
+        name: [gnupg, curl]
+        state: present
+        update_cache: yes
+
+    - name: Add Wazuh GPG key
+      shell: "curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --dearmor -o /usr/share/keyrings/wazuh.gpg"
+      args:
+        creates: /usr/share/keyrings/wazuh.gpg
+
+    - name: Add Wazuh APT repository
+      shell: "echo 'deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main' > /etc/apt/sources.list.d/wazuh.list"
+      args:
+        creates: /etc/apt/sources.list.d/wazuh.list
+
+    - name: Update apt cache after adding repo
+      apt:
+        update_cache: yes
+
+    - name: Install Wazuh Agent
+      apt:
+        name: wazuh-agent
+        state: present
+
+    - name: Configure Wazuh Manager IP
+      lineinfile:
+        path: /var/ossec/etc/ossec.conf
+        regexp: '<address>.*</address>'
+        line: "    <address>{{ wazuh_manager }}</address>"
+      notify: Restart wazuh-agent
+
+    - name: Ensure Wazuh Agent is started and enabled
+      systemd:
+        name: wazuh-agent
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart wazuh-agent
+      systemd:
+        name: wazuh-agent
+        state: restarted

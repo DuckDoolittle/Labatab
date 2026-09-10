@@ -1,0 +1,66 @@
+---
+- name: Configure SMTP outgoing service
+  become: true
+  vars:
+    smtp_user: notifications@labatab.org
+    smtp_password: RJG5SZ1WEQTNJT8D
+    smtp_server: smtp.protonmail.ch
+    smtp_port: 587
+  tasks:
+    - name: Install ssmtp package
+      apt:
+        name: ssmtp
+        state: present
+        update_cache: true
+      ignore_errors: true
+
+    - name: Ensure /etc/ssmtp directory exists
+      file:
+        path: /etc/ssmtp
+        state: directory
+        owner: root
+        group: root
+        mode: "0750"
+
+    - name: Configure ssmtp main config
+      lineinfile:
+        path: /etc/ssmtp/ssmtp.conf
+        create: true
+        mode: "0640"
+        owner: root
+        group: root
+        backrefs: yes
+        regexp: "^#?{{ item.key }}"
+        line: "{{ item.value }}"
+      loop:
+        - key: "root"
+          value: "{{ smtp_user }}"
+        - key: "mailhub"
+          value: "{{ smtp_server }}:{{ smtp_port }}"
+        - key: "UseTLS"
+          value: "Yes"
+        - key: "UseTLSBound"
+          value: "Yes"
+        - key: "AuthUser"
+          value: "{{ smtp_user }}"
+        - key: "AuthPass"
+          value: "{{ smtp_password }}"
+        - key: "FromLineOverride"
+          value: "YES"
+
+    - name: Secure ssmtp configuration permissions
+      file:
+        path: /etc/ssmtp/ssmtp.conf
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Verify ssmtp configuration
+      command: ssmtp -V
+      changed_when: false
+      ignore_errors: true
+      register: ssmtp_version
+
+    - name: Display ssmtp version info
+      debug:
+        msg: "SSMTP installed: {{ ssmtp_version.rc | default('installed', true) }}"
