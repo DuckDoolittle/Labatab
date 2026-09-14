@@ -1,6 +1,4 @@
 [web_servers]
-Neo ansible_host=192.168.68.203
-EllenRipley ansible_host=192.168.68.203
 192.168.68.42
 192.168.68.116
 192.168.68.72
