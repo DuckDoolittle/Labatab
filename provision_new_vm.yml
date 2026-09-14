@@ -11,21 +11,16 @@
     vm_cores: 2
     vm_storage: "USB-NVME-Quatro"
     vm_bridge: "vmbr0"
-    vm_names_pool:
-      - Neo
-      - Trinity
-      - Morpheus
-      - Keanu
-      - Deckard
-      - K
-      - Ripley
-      - SarahConnor
-      - EllenRipley
 
   tasks:
-    - name: Generate random VM name
+    - name: Prompt for VM name
+      pause:
+        prompt: "Enter the name for the new VM"
+      register: user_vm_name
+
+    - name: Set VM name fact
       set_fact:
-        vm_name: "{{ vm_names_pool | random }}"
+        vm_name: "{{ user_vm_name.user_input }}"
 
     - name: Get next available VM ID
       shell: |
@@ -53,7 +48,7 @@
     - name: Add new VM to [web_servers] group in inventory
       lineinfile:
         path: /home/ansible/Labatab_Ansible/inventory
-        line: "{{ new_vm_ip }}"
+        line: "{{ vm_name }} ansible_host={{ new_vm_ip }}"
         insertafter: '\[web_servers\]'
         state: present
 
@@ -157,6 +152,12 @@
           </localfile>
       when: wazuh_config.stat.exists
       notify: Restart wazuh
+
+    - name: Update and upgrade system packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+      become: yes
 
   handlers:
     - name: Restart wazuh
