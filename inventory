@@ -1,5 +1,4 @@
 [web_servers]
-Dump ansible_host=192.168.68.204
 AWX ansible_host=192.168.68.203  
 PVE ansible_host=192.168.68.42  
 PBS ansible_host=192.168.68.116  
