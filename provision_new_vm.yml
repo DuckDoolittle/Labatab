@@ -1,0 +1,168 @@
+---
+- name: Provision and Configure New VM from Template
+  hosts: localhost
+  connection: local
+  become: no
+  vars:
+    pve_node: "192.168.68.42"
+    template_id: 202
+    ip_base: "192.168.68"
+    vm_memory: 2048
+    vm_cores: 2
+    vm_storage: "USB-NVME-Quatro"
+    vm_bridge: "vmbr0"
+    vm_names_pool:
+      - Neo
+      - Trinity
+      - Morpheus
+      - Keanu
+      - Deckard
+      - K
+      - Ripley
+      - SarahConnor
+      - EllenRipley
+
+  tasks:
+    - name: Generate random VM name
+      set_fact:
+        vm_name: "{{ vm_names_pool | random }}"
+
+    - name: Get next available VM ID
+      shell: |
+        ssh {{ pve_node }} "sudo qm list | awk 'NR>1 {print \$1}' | sort -n | tail -n 1"
+      register: max_id
+
+    - name: Set VM ID
+      set_fact:
+        new_vm_id: "{{ max_id.stdout | trim | int + 1 }}"
+
+    - name: Determine a unique IP address
+      set_fact:
+        new_vm_ip: "{{ ip_base }}.{{ (new_vm_id | int) }}"
+
+    - name: Clone VM from template
+      shell: "ssh {{ pve_node }} 'sudo qm clone {{ template_id }} {{ new_vm_id }} --name {{ vm_name }} --full 1 --storage {{ vm_storage }}'"
+
+    - name: Configure VM Hardware
+      shell: |
+        ssh {{ pve_node }} 'sudo qm set {{ new_vm_id }}         --memory {{ vm_memory }}         --cores {{ vm_cores }}         --net0 virtio,bridge={{ vm_bridge }}         --scsihw virtio-scsi-single         --scsi0 {{ vm_storage }}:vm-{{ new_vm_id }}-disk-0,discard=on,ssd=1         --ipconfig0 ip={{ new_vm_ip }}/24,gw=192.168.68.1'
+
+    - name: Start the VM
+      shell: "ssh {{ pve_node }} 'sudo qm start {{ new_vm_id }}'"
+
+    - name: Add new VM to [web_servers] group in inventory
+      lineinfile:
+        path: /home/ansible/Labatab_Ansible/inventory
+        line: "{{ vm_name }} ansible_host={{ new_vm_ip }}"
+        insertafter: '\[web_servers\]'
+        state: present
+
+    - name: Add new VM to dynamic inventory for this run
+      add_host:
+        name: "{{ new_vm_ip }}"
+        groups: temporary_new_vm
+        ansible_user: ansible
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+
+- name: Apply Configuration to the New VM Only
+  hosts: temporary_new_vm
+  gather_facts: no
+  become: yes
+  vars:
+    ansible_user: ansible
+    clamav_log_path: "/var/log/clamav/clamav.log"
+    wazuh_manager: "192.168.68.77"
+    wazuh_group: "Servers"
+    wazuh_pkg_url: "https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.14.7-1_amd64.deb"
+
+  tasks:
+    - name: Wait for VM to boot and SSH to become available
+      wait_for:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        delay: 90
+        timeout: 300
+      become: no
+      delegate_to: localhost
+
+    - name: Gather facts now that SSH is up
+      setup:
+
+    - name: Install qemu-guest-agent
+      apt:
+        name: qemu-guest-agent
+        state: present
+        update_cache: yes
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Ensure qemu-guest-agent is started and enabled
+      systemd:
+        name: qemu-guest-agent
+        state: started
+        enabled: yes
+
+    - name: Install ClamAV and required tools
+      apt:
+        name: [clamav, clamav-daemon, cron]
+        state: present
+
+    - name: Ensure ClamAV log directory exists
+      file:
+        path: /var/log/clamav
+        state: directory
+        owner: clamav
+        group: clamav
+        mode: '0755'
+
+    - name: Create corrected ClamAV scan script
+      copy:
+        dest: /usr/local/bin/wazuh_clamscan.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          LOG_FILE="{{ clamav_log_path }}"
+          TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+          echo "--- Scan Started $TIMESTAMP ---" >> "$LOG_FILE"
+          /usr/bin/clamscan -r /home/ansible /var/www /etc --log="$LOG_FILE"
+          echo "--- Scan Finished ---" >> "$LOG_FILE"
+
+    - name: Schedule daily scan to run at 00:01
+      cron:
+        name: "Daily ClamAV Scan"
+        hour: "0"
+        minute: "1"
+        job: "/usr/local/bin/wazuh_clamscan.sh"
+        user: root
+
+    - name: Install Wazuh Agent via direct package download
+      shell: |
+        wget {{ wazuh_pkg_url }} -O /tmp/wazuh-agent.deb &&         WAZUH_MANAGER='{{ wazuh_manager }}' WAZUH_AGENT_GROUP='{{ wazuh_group }}' dpkg -i /tmp/wazuh-agent.deb &&         systemctl daemon-reload &&         systemctl enable wazuh-agent &&         systemctl start wazuh-agent
+      args:
+        creates: /var/ossec/bin/wazuh-agent
+
+    - name: Check if Wazuh config exists
+      stat:
+        path: /var/ossec/etc/ossec.conf
+      register: wazuh_config
+
+    - name: Configure Wazuh Agent to monitor ClamAV logs
+      blockinfile:
+        path: /var/ossec/etc/ossec.conf
+        marker: "# CLAMAV LOG MONITORING"
+        insertafter: "</localfile>"
+        block: |
+          <localfile>
+            <log_format>syslog</log_format>
+            <location>{{ clamav_log_path }}</location>
+          </localfile>
+      when: wazuh_config.stat.exists
+      notify: Restart wazuh
+
+  handlers:
+    - name: Restart wazuh
+      shell: |
+        if systemctl is-active --quiet wazuh-manager; then
+          systemctl restart wazuh-manager
+        elif systemctl is-active --quiet wazuh-agent; then
+          systemctl restart wazuh-agent
+        fi

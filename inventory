@@ -1,4 +1,6 @@
 [web_servers]
+Neo ansible_host=192.168.68.203
+EllenRipley ansible_host=192.168.68.203
 192.168.68.42
 192.168.68.116
 192.168.68.72
@@ -16,3 +18,4 @@
 ansible_pipelining=false
 ansible_ssh_extra_args="-o ForwardAgent=yes -o PubkeyAuthentication=yes -o IdentitiesOnly=yes"
 ansible_timeout=30
+Trinity ansible_host=192.168.68.203
