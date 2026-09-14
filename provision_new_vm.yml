@@ -53,7 +53,7 @@
     - name: Add new VM to [web_servers] group in inventory
       lineinfile:
         path: /home/ansible/Labatab_Ansible/inventory
-        line: "{{ vm_name }} ansible_host={{ new_vm_ip }}"
+        line: "{{ new_vm_ip }}"
         insertafter: '\[web_servers\]'
         state: present
 
