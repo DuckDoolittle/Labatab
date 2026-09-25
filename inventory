@@ -1,11 +1,11 @@
 [web_servers]
-AWX ansible_host=192.168.68.203  
+#AWX ansible_host=192.168.68.203  
 PVE ansible_host=192.168.68.42  
 PBS ansible_host=192.168.68.116  
 Nextcloud ansible_host=192.168.68.72  
 Nginx ansible_host=192.168.68.228  
 Nomad ansible_host=192.168.68.47  
-Odoo ansible_host=192.168.68.48  
+#Odoo ansible_host=192.168.68.48  
 Razer ansible_host=192.168.68.233  
 Sure ansible_host=192.168.68.220  
 Wazuh ansible_host=192.168.68.77  
