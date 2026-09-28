@@ -3,7 +3,7 @@
   hosts: all
   become: true
   vars:
-    wazuh_manager: "192.168.68.77"
+    wazuh_manager: "192.168.68.195"
     ansible_user: ansible
 
   tasks:
