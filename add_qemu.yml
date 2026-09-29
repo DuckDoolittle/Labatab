@@ -5,9 +5,9 @@
   vars:
     # List of IPs to skip
     excluded_ips:
-      - "192.168.68.42"
+      - "192.168.68.8"
       - "192.168.68.233"
-      - "192.168.68.118"
+      - "192.168.68.146"
 
   tasks:
     - name: Execute installation only for non-excluded IPs

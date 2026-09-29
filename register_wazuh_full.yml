@@ -3,7 +3,7 @@
   hosts: all
   become: true
   vars:
-    wazuh_manager: "192.168.68.195"
+    wazuh_manager: "192.168.68.167"
 
   tasks:
     - name: Install dependencies

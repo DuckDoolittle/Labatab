@@ -1,21 +1,19 @@
 [web_servers]
-#AWX ansible_host=192.168.68.203
-#AWX ansible_host=192.168.68.203  
-PVE ansible_host=192.168.68.42  
-PBS ansible_host=192.168.68.116  
-Nextcloud ansible_host=192.168.68.72  
-Nginx ansible_host=192.168.68.228  
-Nomad ansible_host=192.168.68.47  
+PVE ansible_host=192.168.68.8
+PBS ansible_host=192.168.68.35
+Nextcloud ansible_host=192.168.68.225
+Nginx ansible_host=192.168.68.43
+Kasm ansible_host=192.168.68.146
+#Razer ansible_host=192.168.68.233
+#Wazuh ansible_host=192.168.68.167
+FreshRSS ansible_host=192.168.68.152
+Nomad ansible_host=192.168.68.148  
 #Odoo ansible_host=192.168.68.48  
-Razer ansible_host=192.168.68.233  
 #Sure ansible_host=192.168.68.220  
-Wazuh ansible_host=192.168.68.195  
-FreshRSS ansible_host=192.168.68.38  
-Kasm ansible_host=192.168.68.146  
-Aiknow ansible_host=192.168.68.8
+ 
+
 
 [all:vars]
 ansible_pipelining=false
 ansible_ssh_extra_args="-o ForwardAgent=yes -o PubkeyAuthentication=yes -o IdentitiesOnly=yes"
 ansible_timeout=30
-Trinity ansible_host=192.168.68.203
