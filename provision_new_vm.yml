@@ -4,12 +4,12 @@
   connection: local
   become: no
   vars:
-    pve_node: "192.168.68.42"
-    template_id: 202
+    pve_node: "192.168.68.8"
+    template_id: 500
     ip_base: "192.168.68"
     vm_memory: 2048
     vm_cores: 2
-    vm_storage: "USB-NVME-Quatro"
+    vm_storage: "Local_0n1"
     vm_bridge: "vmbr0"
 
   tasks:
@@ -47,7 +47,7 @@
 
     - name: Add new VM to [web_servers] group in inventory
       lineinfile:
-        path: /home/ansible/Labatab_Ansible/inventory
+        path: /home/ansible/Labatab/inventory
         line: "{{ vm_name }} ansible_host={{ new_vm_ip }}"
         insertafter: '\[web_servers\]'
         state: present

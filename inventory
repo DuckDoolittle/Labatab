@@ -1,15 +1,16 @@
 [web_servers]
+Netdata ansible_host=192.168.68.201
+Netdata ansible_host=192.168.68.249
 PVE ansible_host=192.168.68.8
 PBS ansible_host=192.168.68.35
 Nextcloud ansible_host=192.168.68.225
 Nginx ansible_host=192.168.68.43
 Kasm ansible_host=192.168.68.146
-#Razer ansible_host=192.168.68.233
+Razer ansible_host=192.168.68.233
 #Wazuh ansible_host=192.168.68.167
 FreshRSS ansible_host=192.168.68.152
-Nomad ansible_host=192.168.68.148  
-#Odoo ansible_host=192.168.68.48  
-#Sure ansible_host=192.168.68.220  
+Nomad ansible_host=192.168.68.154  
+  
  
 
 

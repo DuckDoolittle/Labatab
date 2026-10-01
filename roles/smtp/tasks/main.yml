@@ -2,9 +2,9 @@
 - name: Configure SMTP outgoing service
   become: true
   vars:
-    smtp_user: notifications@labatab.org
-    smtp_password: RJG5SZ1WEQTNJT8D
-    smtp_server: smtp.protonmail.ch
+    smtp_user: "{{ smtp_user }}"
+    smtp_password: "{{ smtp_password }}"
+    smtp_server: "{{ smtp_server }}"
     smtp_port: 587
   tasks:
     - name: Install ssmtp package
