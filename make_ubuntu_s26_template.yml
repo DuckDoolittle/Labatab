@@ -218,7 +218,7 @@
 
     - name: Confirm image is real qcow2 (magic bytes) on PVE
       ansible.builtin.shell: |
-        ssh {{ pve_ssh_opts }} {{ pve_ssh_user }}@{{ pve_node }} "head -c 4 {{ pve_download_dir }}/{{ image_filename }} | od -An -c | tr -d ' '"
+        ssh {{ pve_ssh_opts }} {{ pve_ssh_user }}@{{ pve_node }} "head -c 4 {{ pve_download_dir }}/{{ image_filename }} | od -An -tx1 | tr -d ' \n'"
       register: magic_check
       delegate_to: localhost
       changed_when: false
@@ -228,7 +228,7 @@
         msg: >-
           {{ image_filename }} is not a qcow2 image (magic={{ magic_check.stdout }}).
           Refusing to import - a raw misread would corrupt the template.
-      when: "'Q   F   I' not in magic_check.stdout"
+      when: magic_check.stdout != '514649fb'
 
     # ------------------------------------------------------------------
     # 3. Create VM 500 shell
