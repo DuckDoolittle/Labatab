@@ -1,0 +1,55 @@
+#cloud-config
+# ------------------------------------------------------------------
+# Labatab first-boot baseline for clones of the UbuntuS26 template.
+# Applied automatically by cloud-init on the FIRST boot of every
+# VM cloned from template 500 (UbuntuS26).
+# ------------------------------------------------------------------
+
+# --- SSH password authentication ---------------------------------
+# Ubuntu cloud images ship /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
+# containing "PasswordAuthentication no". sshd uses the FIRST value it
+# finds, and sshd_config.d/*.conf is Included at the TOP of
+# sshd_config - so a drop-in with a LOWER number than 60 wins.
+# 00- beats 60-. Write it explicitly; do NOT rely on ssh_pwauth alone
+# (cloud-init writes 50-cloud-init.conf for that, which LOSES to 60).
+write_files:
+  - path: /etc/ssh/sshd_config.d/00-labatab-password-auth.conf
+    owner: root:root
+    permissions: "0644"
+    content: |
+      PasswordAuthentication yes
+      KbdInteractiveAuthentication yes
+
+# --- Restrict datasources to Proxmox-supported ones --------------
+# Without this, every boot probes EC2/Azure/etc. metadata endpoints
+# and can add ~30s to boot. NoCloud is what Proxmox's cloud-init
+# drive provides.
+  - path: /etc/cloud/cloud.cfg.d/99-pve-datasources.cfg
+    owner: root:root
+    permissions: "0644"
+    content: |
+      datasource_list: [ NoCloud, ConfigDrive ]
+
+# Belt-and-braces: cloud-init's set-passwords module will also write
+# 50-cloud-init.conf with PasswordAuthentication yes. Harmless - the
+# 00- file above already won the ordering race.
+ssh_pwauth: true
+
+# --- Packages -----------------------------------------------------
+# qemu-guest-agent is REQUIRED for `qm guest` IP discovery on PVE.
+# python3 is REQUIRED by Ansible on the target.
+packages:
+  - qemu-guest-agent
+  - python3
+
+# --- First-boot commands -----------------------------------------
+runcmd:
+  # Make sure the guest agent is enabled and running BEFORE cloud-init
+  # finishes, so `qm guest cmd ... network-get-interfaces` works the
+  # moment SSH is up.
+  - systemctl enable qemu-guest-agent
+  - systemctl start qemu-guest-agent
+  # Restart sshd so the 00- drop-in is definitely loaded.
+  - systemctl restart ssh
+  # Marker so we can verify cloud-init ran to completion.
+  - touch /var/lib/cloud/instance/boot-finished

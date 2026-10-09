@@ -1,0 +1,26 @@
+---
+- name: Deploy Wazuh Agent
+  hosts: all
+  become: true
+  vars:
+    wazuh_manager_ip: "192.168.68.167"
+    wazuh_agent_url: "https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.14.8-1_amd64.deb"
+    wazuh_agent_pkg: "wazuh-agent_4.14.8-1_amd64.deb"
+
+  tasks:
+    - name: Download Wazuh Agent package
+      ansible.builtin.get_url:
+        url: "{{ wazuh_agent_url }}"
+        dest: "/tmp/{{ wazuh_agent_pkg }}"
+        mode: '0644'
+
+    - name: Install Wazuh Agent package
+      ansible.builtin.shell: "WAZUH_MANAGER='{{ wazuh_manager_ip }}' dpkg -i /tmp/{{ wazuh_agent_pkg }}"
+      args:
+        creates: /var/ossec/bin/wazuh-control
+
+    - name: Ensure Wazuh Manager is started and enabled
+      ansible.builtin.systemd:
+        name: wazuh-agent
+        state: started
+        enabled: yes
