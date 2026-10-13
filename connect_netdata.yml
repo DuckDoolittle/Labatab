@@ -1,0 +1,30 @@
+---
+- name: Connect VM to Netdata Parent
+  hosts: all
+  become: true
+  tasks:
+    - name: Check if Netdata is running in Docker
+      shell: docker ps -q -f name=netdata
+      register: docker_netdata
+      changed_when: false
+
+    - name: Clean and configure streaming inside container
+      shell: |
+        docker exec netdata sh -c "sed -i '/\\[stream\\]/,/\\[/ { /\\[stream\\]/d; /\\[/!d }' /etc/netdata/netdata.conf"
+        docker exec netdata sh -c "echo -e '\n[stream]\nenabled = yes\nread-threads = 1\ndestination = netdata.labatab.org' >> /etc/netdata/netdata.conf"
+      when: docker_netdata.stdout != ""
+      register: final_config
+
+    - name: Restart Netdata container to apply changes
+      shell: docker restart netdata
+      when: final_config.changed
+
+    - name: Verify streaming configuration was written
+      shell: docker exec netdata grep -A 3 '\[stream\]' /etc/netdata/netdata.conf
+      when: final_config.changed
+      register: config_verify
+
+    - name: Print configuration verification
+      debug:
+        var: config_verify.stdout_lines
+      when: final_config.changed
